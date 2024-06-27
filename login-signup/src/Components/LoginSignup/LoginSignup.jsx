@@ -14,17 +14,22 @@ axios.defaults.baseURL = 'http://localhost:3001';
 const LoginSignup = () => {
     const [action, setAction] = useState('Login');
     const [employeeId, setEmployeeId] = useState('');
-    const [inputName, setInputName] = useState('');
+    const [first_name,setInputFirstName] = useState('');
+    const [last_name,setInputLastName] = useState('');
     const [role, setRole] = useState(''); // Added state for role
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState(''); // State for message
+    const [signupEmployeeIdError, setSignupEmployeeIdError] = useState('');
+    const [loginEmployeeIdError, setLoginEmployeeIdError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
     const navigate = useNavigate();
 
     const handleSignup = async () => {
         try {
             const response = await axios.post('/staff/signup', {
                 employee_id: employeeId,
-                name: inputName,
+                first_name: first_name,
+                last_name: last_name,
                 role: role, // Pass role to backend if needed
                 password: password
             });
@@ -43,6 +48,7 @@ const LoginSignup = () => {
                 password: password
             });
             setMessage('Login Successful'); // Set success message
+            localStorage.setItem('employee_id', employeeId); // Store employee_id in local storage
             // Navigate to home page or show success message
             navigate('/home');
         } catch (error) {
@@ -58,6 +64,40 @@ const LoginSignup = () => {
         navigate('/insert');
     };
 
+    // Validation functions for Sign Up
+    const validateSignupEmployeeId = () => {
+        if (employeeId.length !== 5) {
+            setSignupEmployeeIdError('Employee ID must be 5 digits');
+        } else if (!/^\d+$/.test(employeeId)) {
+            setSignupEmployeeIdError('Only integers are allowed');
+        } else {
+            setSignupEmployeeIdError('');
+        }
+    };
+
+    const validatePassword = () => {
+        if (password.length < 6) {
+            setPasswordError('Password must be longer than 6 characters');
+        } else if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) {
+            setPasswordError('Password must contain at least one lowercase and one uppercase letter');
+        } else if (!/\d/.test(password) && !/[^\w\s]/.test(password)) {
+            setPasswordError('Password must contain at least one symbol');
+        } else if (password.length < 9) {
+            setPasswordError('Password is weak');
+        } else {
+            setPasswordError('');
+        }
+    };
+
+    // Validation functions for Log In
+    const validateLoginEmployeeId = () => {
+        if (employeeId.length !== 5) {
+            setLoginEmployeeIdError('Employee ID must be 5 digits');
+        } else {
+            setLoginEmployeeIdError('');
+        }
+    };
+
     return (
         <div className="container">
             <div className="header">
@@ -67,13 +107,19 @@ const LoginSignup = () => {
             <div className="inputs">
                 <div className="input">
                     <img src={employee_id_icon} alt="Employee ID" />
-                    <input type="text" placeholder="Employee ID" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} />
+                    <input type="text" placeholder="Employee ID" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} onBlur={action === 'Sign Up' ? validateSignupEmployeeId : validateLoginEmployeeId} />
                 </div>
+                {action === 'Sign Up' && signupEmployeeIdError && <div className="validation-message">{signupEmployeeIdError}</div>}
+                {action === 'Login' && loginEmployeeIdError && <div className="validation-message">{loginEmployeeIdError}</div>}
                 {action === "Sign Up" && (
                     <>
                         <div className="input">
                             <img src={name_icon} alt="Name" />
-                            <input type="text" placeholder="Name" value={inputName} onChange={(e) => setInputName(e.target.value)} />
+                            <input type="text" placeholder="First Name" value={first_name} onChange={(e) => setInputFirstName(e.target.value)} />
+                        </div>
+                        <div className="input">
+                            <img src={name_icon} alt="Name" />
+                            <input type="text" placeholder="Last Name" value={last_name} onChange={(e) => setInputLastName(e.target.value)} />
                         </div>
                         <div className="input">
                             <img src={role_icon} alt="Role" />
@@ -83,8 +129,9 @@ const LoginSignup = () => {
                 )}
                 <div className="input">
                     <img src={password_icon} alt="Password" />
-                    <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onBlur={validatePassword} />
                 </div>
+                {passwordError && <div className="validation-message">{passwordError}</div>}
             </div>
             {action === "Login" && (
                 <div className="forgot-password">
@@ -92,9 +139,9 @@ const LoginSignup = () => {
                 </div>
             )}
             <div className="submit-container">
-                <div 
-                    className={action === "Login" ? "submit gray" : "submit"} 
-                    onClick={() => { 
+                <div
+                    className={action === "Login" ? "submit gray" : "submit"}
+                    onClick={() => {
                         setAction('Sign Up');
                         if (action === 'Sign Up') {
                             handleSignup();
@@ -103,9 +150,9 @@ const LoginSignup = () => {
                 >
                     Sign Up
                 </div>
-                <div 
-                    className={action === "Sign Up" ? "submit gray" : "submit"} 
-                    onClick={() => { 
+                <div
+                    className={action === "Sign Up" ? "submit gray" : "submit"}
+                    onClick={() => {
                         setAction('Login');
                         if (action === 'Login') {
                             handleLogin();
@@ -116,7 +163,7 @@ const LoginSignup = () => {
                 </div>
             </div>
             {message && (
-                <div className="message">{message}</div> // Display the message
+                <div className="message">{message}</div>
             )}
             <div className="page-container">
                 <div className="page" onClick={goToHome}>Home</div>
